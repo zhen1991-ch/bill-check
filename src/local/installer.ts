@@ -3,7 +3,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { safeDirectory, sha256 } from './storage.js';
 
-export const VERSION='0.2.0';
+export const VERSION='0.2.1';
 type Installation={version:string;entry:string;previousEntry?:string};
 export function installRelease(sourceEntry:string,directory:string):Installation {
   if(path.basename(sourceEntry)!=='billcheck.mjs')throw new Error('Install the bundled build: node dist/billcheck.mjs install');

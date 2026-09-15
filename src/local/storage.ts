@@ -5,18 +5,24 @@ import path from 'node:path';
 import { z } from 'zod';
 import { embeddedBillAttachment } from '../core/bill-image.js';
 import { BillDataSchema, BudgetDataSchema, CollectionDataSchema, CreateBillSchema, CreateCollectionSchema,
-  UpdateBillSchema, UpdateCollectionSchema, parsePersistedBillData,
+  LocalIdentitySchema, UpdateBillSchema, UpdateCollectionSchema, UpdateLocalIdentitySchema, parsePersistedBillData,
   type Bill, type BillFilters, type Budget, type Collection, type CreateBill, type CreateCollection,
-  type UpdateBill, type UpdateCollection, type Versioned, type Workspace, type SummaryGroup, type SpendingSummary } from '../core/domain.js';
+  type LocalIdentity, type UpdateBill, type UpdateCollection, type UpdateLocalIdentity, type Versioned,
+  type Workspace, type SummaryGroup, type SpendingSummary } from '../core/domain.js';
 import { ConflictError, NotFoundError, PermissionError, type BillCheckRepository } from '../core/repository.js';
 
 export const sha256 = (bytes: Uint8Array | string) => createHash('sha256').update(bytes).digest('hex');
-const SCHEMA = `
+const SCHEMA_V1 = `
 CREATE TABLE records(kind TEXT NOT NULL CHECK(kind IN ('bill','collection','budget')), id TEXT NOT NULL,
   data TEXT NOT NULL CHECK(json_valid(data)), version INTEGER NOT NULL CHECK(version > 0), PRIMARY KEY(kind,id));
 CREATE TABLE attachments(bill_id TEXT PRIMARY KEY, hash TEXT NOT NULL, mime TEXT NOT NULL, size INTEGER NOT NULL);
 CREATE INDEX bill_date ON records(json_extract(data,'$.date')) WHERE kind='bill';
 CREATE TABLE schema_migrations(version INTEGER PRIMARY KEY, checksum TEXT NOT NULL, applied_at TEXT NOT NULL);
+`;
+const MIGRATION_V2 = `
+CREATE TABLE local_identity(id TEXT PRIMARY KEY CHECK(id='local'), data TEXT NOT NULL CHECK(json_valid(data)),
+  version INTEGER NOT NULL CHECK(version > 0));
+INSERT INTO local_identity VALUES('local','{"workspaceName":"Local Billspace","userName":"Local User"}',1);
 `;
 type Row = { data: string; version: number };
 type Attachment = { hash: string; mime: string; size: number };
@@ -52,15 +58,28 @@ export class SqliteBillCheckRepository implements BillCheckRepository {
     for (const suffix of ['', '-wal', '-shm']) safeFile(file + suffix);
     this.db = new DatabaseSync(file);
     this.db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;');
-    const version = (this.db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version;
+    let version = (this.db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version;
     if (version === 0) {
       this.transaction(() => {
-        this.db.exec(SCHEMA);
-        this.db.prepare('INSERT INTO schema_migrations VALUES(1,?,?)').run(sha256(SCHEMA), new Date().toISOString());
+        this.db.exec(SCHEMA_V1);
+        this.db.prepare('INSERT INTO schema_migrations VALUES(1,?,?)').run(sha256(SCHEMA_V1), new Date().toISOString());
         this.db.exec('PRAGMA user_version=1');
       });
-    } else if (version !== 1 || (this.db.prepare('SELECT checksum FROM schema_migrations WHERE version=1').get() as {checksum: string})?.checksum !== sha256(SCHEMA)) {
-      this.db.close(); throw new Error('Unsupported or modified database migration');
+      version = 1;
+    }
+    const v1Checksum=(this.db.prepare('SELECT checksum FROM schema_migrations WHERE version=1').get() as {checksum: string}|undefined)?.checksum;
+    if(v1Checksum!==sha256(SCHEMA_V1)){this.db.close();throw new Error('Unsupported or modified database migration');}
+    if(version===1){
+      this.transaction(()=>{
+        this.db.exec(MIGRATION_V2);
+        this.db.prepare('INSERT INTO schema_migrations VALUES(2,?,?)').run(sha256(MIGRATION_V2),new Date().toISOString());
+        this.db.exec('PRAGMA user_version=2');
+      });
+      version=2;
+    }
+    const v2Checksum=(this.db.prepare('SELECT checksum FROM schema_migrations WHERE version=2').get() as {checksum: string}|undefined)?.checksum;
+    if(version!==2||v2Checksum!==sha256(MIGRATION_V2)){
+      this.db.close();throw new Error('Unsupported or modified database migration');
     }
   }
   close() { this.db.close(); }
@@ -91,6 +110,23 @@ export class SqliteBillCheckRepository implements BillCheckRepository {
   private insert<T>(kind: string, id: string, data: T) {
     if (this.row(kind,id)) throw new ConflictError(kind,id,'absent','present');
     return this.put(kind,id,data);
+  }
+  private localIdentity(): Versioned<LocalIdentity> {
+    const row=this.db.prepare("SELECT data,version FROM local_identity WHERE id='local'").get() as Row|undefined;
+    if(!row)throw new NotFoundError('local identity','local');
+    return {data:LocalIdentitySchema.parse(decode(row.data)),version:String(row.version)};
+  }
+  async getLocalIdentity(): Promise<Versioned<LocalIdentity>> { return this.localIdentity(); }
+  async updateLocalIdentity(patch: UpdateLocalIdentity, expectedVersion: string): Promise<Versioned<LocalIdentity>> {
+    return this.transaction(()=>{
+      const current=this.localIdentity();
+      if(expectedVersion!==current.version)throw new ConflictError('local identity','local',expectedVersion,current.version);
+      const data=LocalIdentitySchema.parse({...current.data,...UpdateLocalIdentitySchema.parse(patch)});
+      const result=this.db.prepare("UPDATE local_identity SET data=?,version=version+1 WHERE id='local' AND version=?")
+        .run(encode(data),Number(expectedVersion));
+      if(result.changes!==1)throw new ConflictError('local identity','local',expectedVersion,this.localIdentity().version);
+      return this.localIdentity();
+    });
   }
   attachmentPath(hash: string) {
     if (!/^[a-f0-9]{64}$/.test(hash)) throw new Error('Invalid attachment hash');
@@ -124,7 +160,7 @@ export class SqliteBillCheckRepository implements BillCheckRepository {
     return record;
   }
   async listWorkspaces(): Promise<Workspace[]> {
-    return [{id:'local',type:'personal',name:'Local Billspace',ownerId:'local-owner',currency:'EUR',isDefault:true,
+    return [{id:'local',type:'personal',name:this.localIdentity().data.workspaceName,ownerId:'local-owner',currency:'EUR',isDefault:true,
       permissions:{canView:true,canEdit:true,canDelete:true}}];
   }
   private billRows(filters: BillFilters = {}): Array<Versioned<Bill>> {

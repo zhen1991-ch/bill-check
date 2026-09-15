@@ -21,6 +21,10 @@ it('serves 16 MCP tools through the shared daemon and rejects forged browser req
   const result=await client.callTool({name:'billcheck_create_bill',arguments:{workspace_id:'local',bill:{merchantName:'Local',date:'2026-09-08',amount:6.9,currency:'EUR',category:'Other',isTaxRelevant:false,items:[],collectionIds:[]},attachment:{mime_type:'text/plain',file_name:'original.txt',data_base64:Buffer.from('original receipt').toString('base64')}}});
   expect(result.isError).not.toBe(true);const bill=(result.structuredContent as any).bill;
   expect((await remoteRepository(root).getBill('local',bill.data.id)).data.amount).toBe(6.9);
+  const identity=await rpc(root,'getLocalIdentity');
+  expect(await rpc(root,'updateLocalIdentity',[{workspaceName:'Runtime Space',userName:'Runtime User'},identity.version]))
+    .toMatchObject({data:{workspaceName:'Runtime Space',userName:'Runtime User'},version:'2'});
+  expect((await remoteRepository(root).listWorkspaces())[0]?.name).toBe('Runtime Space');
   const archive=await remoteDelivery(root).createDownload({kind:'archive',workspaceId:'local',billIds:[bill.data.id],fileName:'receipts.zip'});
   const response=await fetch(archive.url);const zip=Buffer.from(await response.arrayBuffer());expect(zip.readUInt32LE(0)).toBe(0x04034b50);expect(zip.includes(Buffer.from('original receipt'))).toBe(true);
   const headers={'content-type':'application/json',authorization:'Bearer '+daemon.info.token};

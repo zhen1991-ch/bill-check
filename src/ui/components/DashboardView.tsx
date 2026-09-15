@@ -9,6 +9,7 @@ import { getCategoryStyle } from './CategoryPicker';
 import { RecurringManagerView } from './RecurringManagerView';
 import { BudgetSettingsView } from './BudgetSettingsView';
 import { WorkspaceManagerView } from './WorkspaceManagerView';
+import { ProfileSettingsView } from './ProfileSettingsView';
 import { CollectionManagerView } from './CollectionManagerView';
 import { convertCurrency } from '../utils/currencyUtils';
 import { CLOUD_EDITIONS_ENABLED } from '../services/cloudEditions';
@@ -55,6 +56,7 @@ export const DashboardView: React.FC = () => {
   const [timeRange, setTimeRange] = useState<TimeRange>('this_month');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isWorkspaceManagerOpen, setIsWorkspaceManagerOpen] = useState(false);
+  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
   const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [isCollectionManagerOpen, setIsCollectionManagerOpen] = useState(false);
@@ -263,7 +265,7 @@ export const DashboardView: React.FC = () => {
               <h1 className="text-2xl font-bold tracking-tight mr-2">
                 {activeWorkspace.name}
               </h1>
-              <button onClick={() => setIsWorkspaceManagerOpen(true)} className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white/90">
+              <button aria-label="Manage Billspaces" onClick={() => setIsWorkspaceManagerOpen(true)} className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white/90">
                 <i className="fas fa-chevron-down text-xs"></i>
               </button>
             </div>
@@ -271,6 +273,8 @@ export const DashboardView: React.FC = () => {
 
           <div className="relative">
             <button
+              aria-label="Open user menu"
+              aria-expanded={showUserMenu}
               onClick={() => setShowUserMenu(!showUserMenu)}
               className="w-11 h-11 rounded-full p-0.5 bg-white/30 backdrop-blur-md border border-white/40 shadow-lg transition-transform active:scale-95"
             >
@@ -316,6 +320,13 @@ export const DashboardView: React.FC = () => {
                 </div>
 
                 <div className="py-2 border-b border-slate-100">
+                  <button
+                    aria-label="Edit Profile"
+                    onClick={() => {setIsProfileSettingsOpen(true);setShowUserMenu(false);}}
+                    className="w-full text-left px-5 py-2.5 text-sm flex items-center transition-colors text-slate-700 hover:bg-slate-50"
+                  >
+                    <i className="fas fa-user-pen w-6 text-indigo-500"></i> Edit Profile
+                  </button>
                   {CLOUD_EDITIONS_ENABLED && <button onClick={() => { navigate('/billing'); setShowUserMenu(false); }} className="w-full text-left px-5 py-2.5 text-sm text-indigo-700 hover:bg-slate-50">Plan and billing</button>}
                   <button
                     onClick={() => {
@@ -656,6 +667,10 @@ export const DashboardView: React.FC = () => {
       {/* Modals */}
       {isWorkspaceManagerOpen && (
         <WorkspaceManagerView onClose={() => setIsWorkspaceManagerOpen(false)} />
+      )}
+
+      {isProfileSettingsOpen && (
+        <ProfileSettingsView onClose={() => setIsProfileSettingsOpen(false)} />
       )}
 
       {isRecurringModalOpen && (

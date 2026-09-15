@@ -25,7 +25,7 @@ export function readInfo(directory:string):RuntimeInfo {
   if(lstatSync(file).isSymbolicLink()) throw new Error('Unsafe runtime file');
   return JSON.parse(readFileSync(file,'utf8'));
 }
-const methods=new Set(['listWorkspaces','listBills','getBill','getBills','createBill','updateBill','deleteBill',
+const methods=new Set(['getLocalIdentity','updateLocalIdentity','listWorkspaces','listBills','getBill','getBills','createBill','updateBill','deleteBill',
   'listCollections','createCollection','updateCollection','deleteCollection','getBudget','setBudget','getSpendingSummary']);
 export const repositoryMethods=[...methods];
 export async function rpc(directory:string,method:string,args:unknown[]=[]):Promise<any> {

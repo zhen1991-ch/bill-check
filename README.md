@@ -32,7 +32,7 @@ For a privately supplied, verified release tarball, a one-command local install
 works without publishing it first:
 
 ```sh
-npm exec --package /absolute/path/billcheck-local-0.2.0.tgz -- billcheck-local install
+npm exec --package /absolute/path/billcheck-local-0.2.1.tgz -- billcheck-local install
 ```
 
 Node.js must already be installed. npm is used here only as the local Node.js

@@ -13,6 +13,7 @@ import {
 } from '../types';
 
 type Versioned<T> = { data: T; version: string };
+type LocalIdentity = { workspaceName: string; userName: string };
 
 interface AppContextType {
   user: User | null;
@@ -21,6 +22,7 @@ interface AppContextType {
   switchWorkspace: (workspace: Workspace) => void;
   createWorkspace: (name: string, currency: string, initialMembers?: string[]) => Promise<void>;
   updateWorkspaceDetails: (id: string, type: WorkspaceType, data: Partial<Workspace>) => Promise<void>;
+  updateUserName: (name: string) => Promise<void>;
   removeWorkspace: (id: string) => Promise<void>;
   leaveWorkspace: (id: string) => Promise<void>;
   setDefaultWorkspace: (id: string) => Promise<void>;
@@ -87,6 +89,7 @@ async function rpc<T>(method: string, ...args: unknown[]): Promise<T> {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
+  const [userName, setUserName] = useState(localUser.name);
   const [bills, setBills] = useState<Bill[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [budget, setBudget] = useState<Budget | null>(null);
@@ -97,15 +100,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const billVersions = useRef(new Map<string, string>());
   const collectionVersions = useRef(new Map<string, string>());
   const budgetVersion = useRef<string | undefined>(undefined);
+  const identityVersion = useRef<string>('1');
 
   const refresh = useCallback(async () => {
-    const [workspaces, versionedBills, versionedCollections, versionedBudget] = await Promise.all([
+    const [identity, workspaces, versionedBills, versionedCollections, versionedBudget] = await Promise.all([
+      rpc<Versioned<LocalIdentity>>('getLocalIdentity'),
       rpc<Workspace[]>('listWorkspaces'),
       rpc<Array<Versioned<Bill>>>('listBills', 'local', { limit: 500 }),
       rpc<Array<Versioned<Collection>>>('listCollections', 'local'),
       rpc<Versioned<Budget> | null>('getBudget', 'local')
     ]);
     const nextWorkspace = workspaces[0] ?? null;
+    identityVersion.current = identity.version;
+    setUserName(identity.data.userName);
     setWorkspace(nextWorkspace);
     setCurrencyState((nextWorkspace?.currency as Currency) ?? 'EUR');
     billVersions.current = new Map(versionedBills.map(record => [record.data.id, record.version]));
@@ -137,12 +144,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [refresh]);
 
   const value = useMemo<AppContextType>(() => ({
-    user: localUser,
+    user: {...localUser,name:userName},
     activeWorkspace: workspace,
     availableWorkspaces: workspace ? [workspace] : [],
     switchWorkspace: () => undefined,
     createWorkspace: async () => { throw new Error('BillCheck Local uses one Personal Billspace.'); },
-    updateWorkspaceDetails: async () => { throw new Error('Local Billspace metadata is managed locally.'); },
+    updateWorkspaceDetails: async (id, type, data) => {
+      if(id!=='local'||type!=='personal'||typeof data.name!=='string')throw new Error('Only the Local Billspace name can be changed.');
+      await runAndRefresh(()=>rpc('updateLocalIdentity',{workspaceName:data.name},identityVersion.current));
+    },
+    updateUserName: name => runAndRefresh(()=>rpc('updateLocalIdentity',{userName:name},identityVersion.current)),
     removeWorkspace: async () => { throw new Error('The Local Billspace cannot be removed from the app.'); },
     leaveWorkspace: async () => { throw new Error('The Local Billspace belongs to this device.'); },
     setDefaultWorkspace: async () => undefined,
@@ -179,7 +190,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     isLoading,
     dbError,
     showSecurityRules: () => setDbError('Your local database could not be opened.')
-  }), [workspace, bills, collections, chatSessions, budget, currency, isLoading, dbError, runAndRefresh]);
+  }), [workspace, userName, bills, collections, chatSessions, budget, currency, isLoading, dbError, runAndRefresh]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

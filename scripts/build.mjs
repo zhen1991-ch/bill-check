@@ -81,5 +81,5 @@ await build({
 const bytes = readFileSync(path.join(root, 'dist/billcheck.mjs'));
 writeFileSync(
   path.join(root, 'dist/checksums.json'),
-  JSON.stringify({ version: '0.2.0', files: { 'billcheck.mjs': createHash('sha256').update(bytes).digest('hex') } }, null, 2) + '\n'
+  JSON.stringify({ version: '0.2.1', files: { 'billcheck.mjs': createHash('sha256').update(bytes).digest('hex') } }, null, 2) + '\n'
 );

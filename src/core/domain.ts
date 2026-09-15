@@ -188,6 +188,16 @@ export const WorkspaceSchema = z.object({
   isDefault: z.boolean().optional()
 });
 
+export const LocalIdentitySchema = z.object({
+  workspaceName: z.string().trim().min(1).max(200),
+  userName: z.string().trim().min(1).max(200)
+});
+
+export const UpdateLocalIdentitySchema = LocalIdentitySchema.partial().refine(
+  value => Object.keys(value).length > 0,
+  'At least one local identity field is required'
+);
+
 export type Bill = z.infer<typeof PersistedBillDataSchema>;
 export type AttachmentMimeType = z.infer<typeof AttachmentMimeTypeSchema>;
 export type EmbeddedBillAttachment = z.infer<typeof EmbeddedBillAttachmentSchema>;
@@ -198,6 +208,8 @@ export type CreateCollection = z.infer<typeof CreateCollectionSchema>;
 export type UpdateCollection = z.infer<typeof UpdateCollectionSchema>;
 export type Budget = z.infer<typeof BudgetDataSchema>;
 export type Workspace = z.infer<typeof WorkspaceSchema>;
+export type LocalIdentity = z.infer<typeof LocalIdentitySchema>;
+export type UpdateLocalIdentity = z.infer<typeof UpdateLocalIdentitySchema>;
 
 export interface Versioned<T> {
   data: T;

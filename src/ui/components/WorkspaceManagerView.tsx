@@ -5,8 +5,21 @@ import { Button } from './Button';
 interface WorkspaceManagerViewProps { onClose: () => void }
 
 export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({ onClose }) => {
-  const { activeWorkspace, currency, setCurrency } = useAppContext();
+  const { activeWorkspace, currency, setCurrency, updateWorkspaceDetails } = useAppContext();
   const [showDetails, setShowDetails] = useState(false);
+  const [spaceName, setSpaceName] = useState(activeWorkspace?.name ?? 'Local Billspace');
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const saveName = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const name=spaceName.trim();
+    if(!activeWorkspace||!name)return;
+    setIsSaving(true);setError(null);
+    try{await updateWorkspaceDetails(activeWorkspace.id,activeWorkspace.type,{name});onClose();}
+    catch(cause){setError(cause instanceof Error?cause.message:String(cause));}
+    finally{setIsSaving(false);}
+  };
 
   if (showDetails) {
     return (
@@ -14,12 +27,12 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({ onCl
         <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-slate-900">Billspace Details</h3>
-            <button type="button" onClick={() => setShowDetails(false)} className="text-slate-400 hover:text-slate-600"><i className="fas fa-arrow-left" /></button>
+            <button type="button" aria-label="Back to Billspaces" onClick={() => setShowDetails(false)} className="text-slate-400 hover:text-slate-600"><i className="fas fa-arrow-left" /></button>
           </div>
-          <div className="space-y-4">
+          <form className="space-y-4" onSubmit={saveName}>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Billspace Name</label>
-              <div className="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-700">{activeWorkspace?.name ?? 'Local Billspace'}</div>
+              <label htmlFor="local-billspace-name" className="block text-xs font-bold text-slate-500 uppercase mb-1">Billspace Name</label>
+              <input id="local-billspace-name" value={spaceName} maxLength={200} onChange={event=>setSpaceName(event.target.value)} className="w-full border border-slate-300 bg-white rounded-xl px-4 py-2.5 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500" />
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Display Currency</label>
@@ -34,8 +47,9 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({ onCl
                 <div><p className="font-bold">Private local storage</p><p className="text-xs text-indigo-700 mt-1">No login, remote members, or cloud database. Local agents connect through MCP.</p></div>
               </div>
             </div>
-            <Button fullWidth onClick={onClose}>Done</Button>
-          </div>
+            {error&&<p role="alert" className="text-xs text-red-600">{error}</p>}
+            <Button type="submit" fullWidth loading={isSaving} disabled={!spaceName.trim()||spaceName.trim()===activeWorkspace?.name}>Save Changes</Button>
+          </form>
         </div>
       </div>
     );
@@ -46,7 +60,7 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({ onCl
       <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl animate-in zoom-in-95 max-h-[80vh] flex flex-col">
         <div className="flex justify-between items-center mb-6 shrink-0">
           <h3 className="text-xl font-bold text-slate-900 flex items-center"><i className="fas fa-layer-group text-indigo-600 mr-2" /> Manage Billspaces</h3>
-          <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600"><i className="fas fa-times text-lg" /></button>
+          <button type="button" aria-label="Close Billspace manager" onClick={onClose} className="text-slate-400 hover:text-slate-600"><i className="fas fa-times text-lg" /></button>
         </div>
         <div className="p-4 rounded-xl border border-indigo-500 bg-indigo-50/50">
           <div className="flex justify-between items-start">
@@ -58,7 +72,7 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({ onCl
               </div>
               <p className="text-xs text-slate-500 mt-1">Currency: {currency} • Owner</p>
             </div>
-            <button type="button" onClick={() => setShowDetails(true)} className="text-slate-400 hover:text-indigo-600 p-1.5" title="View local Billspace"><i className="fas fa-pen" /></button>
+            <button type="button" aria-label="View local Billspace" onClick={() => setShowDetails(true)} className="text-slate-400 hover:text-indigo-600 p-1.5" title="View local Billspace"><i className="fas fa-pen" /></button>
           </div>
         </div>
         <div className="mt-4 rounded-xl bg-slate-50 border border-slate-100 p-4 text-xs text-slate-500">

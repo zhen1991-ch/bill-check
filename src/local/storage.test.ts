@@ -19,6 +19,17 @@ describe('SQLite local repository',()=>{
   await expect(repo.deleteBill('local',created.data.id,'1')).rejects.toThrow('changed');
   await repo.deleteBill('local',created.data.id,'2');await expect(second.getBill('local',created.data.id)).rejects.toThrow('not found');
  });
+ it('persists editable local names and protects concurrent changes',async()=>{
+  const {root,repo}=setup();const second=new SqliteBillCheckRepository(path.join(root,'data'));repos.push(second);
+  expect(await repo.getLocalIdentity()).toEqual({data:{workspaceName:'Local Billspace',userName:'Local User'},version:'1'});
+  expect((await repo.updateLocalIdentity({workspaceName:'Studio Receipts'},'1')).version).toBe('2');
+  await expect(second.updateLocalIdentity({userName:'Stale Writer'},'1')).rejects.toThrow('changed');
+  const updated=await second.updateLocalIdentity({userName:'Alex Morgan'},'2');
+  expect(updated).toEqual({data:{workspaceName:'Studio Receipts',userName:'Alex Morgan'},version:'3'});
+  expect((await repo.listWorkspaces())[0]?.name).toBe('Studio Receipts');
+  expect((await repo.getLocalIdentity()).data.userName).toBe('Alex Morgan');
+  expect((repo.db.prepare('PRAGMA user_version').get() as {user_version:number}).user_version).toBe(2);
+ });
  it('prevents alternate workspaces and remote attachment fetches',async()=>{
   const {repo}=setup();await expect(repo.createBill('other',input())).rejects.toThrow('does not allow');
   await expect(repo.createBill('local',input({imageUrl:'https://example.com/file.pdf'}))).rejects.toThrow('not remote URLs');

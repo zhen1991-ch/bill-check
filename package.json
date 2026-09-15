@@ -1,6 +1,6 @@
 {
   "name": "billcheck-local",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Local receipt workspace with SQLite and MCP",
   "type": "module",
   "license": "AGPL-3.0-only",
