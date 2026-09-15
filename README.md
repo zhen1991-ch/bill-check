@@ -9,6 +9,29 @@ tokens, navigation, receipt forms, charts, lists, details, and management
 dialogs as the hosted BillCheck application. Local-only copy replaces account,
 member, billing, and remote-AI actions without introducing a second UI design.
 
+## Local and Cloud editions
+
+This repository contains **BillCheck Local**, the self-hosted edition. The
+managed Cloud edition is available at the official website:
+**[bill-check.de](https://bill-check.de/)**.
+
+| Capability | Local (this repository) | Cloud Free | Cloud Plus |
+| --- | --- | --- | --- |
+| Setup | Install on your own computer | Use the managed web and mobile apps | Use the managed web and mobile apps |
+| Account | No account or login | BillCheck account required | BillCheck account required |
+| Billspaces | 1 Personal Billspace on this device | 1 Personal Billspace | Up to 5 owned Billspaces, including Personal |
+| Members | One local user | Account owner only | Up to 3 people per Billspace, including the owner; a Plus owner can invite Free users |
+| Storage | SQLite database and original files on your device | BillCheck-managed cloud storage | BillCheck-managed cloud storage |
+| MCP | All 16 read/write tools through the local MCP server; no product daily quota | Core read/write tools, 10 tool calls per day | All MCP tools with no daily product cap; fair-use and security limits apply |
+| Agent and OCR | Bring your own local MCP-compatible agent and OCR/model | Connect through the official remote MCP service | Connect through the official remote MCP service |
+| ZIP export of originals | Included | Not included | Included |
+| Internet after installation | Not required for normal local operation | Required | Required |
+| Price | Free and open source | Free | €6.90/month, €69/year, or €159 lifetime |
+
+Local and Cloud use the same BillCheck interface, but they are separate data
+environments. Local data is not automatically synchronized or migrated to the
+Cloud edition.
+
 ## Run from source
 
 Requires Node.js **22.16 or later** (Node 24 recommended).
