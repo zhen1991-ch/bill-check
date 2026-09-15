@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { SqliteBillCheckRepository, restoreBackup } from './storage.js';
@@ -7,7 +7,7 @@ import type { CreateBill } from '../core/domain.js';
 
 const roots:string[]=[],repos:SqliteBillCheckRepository[]=[];
 const input=(patch:Partial<CreateBill>={}):CreateBill=>({merchantName:'Train',date:'2026-09-08',amount:0.1,currency:'EUR',category:'Travel',items:[],isTaxRelevant:false,collectionIds:[],...patch});
-function setup(){const root=mkdtempSync(path.join(os.tmpdir(),'billcheck-sqlite-test-'));roots.push(root);const repo=new SqliteBillCheckRepository(path.join(root,'data'));repos.push(repo);return {root,repo};}
+function setup(){const root=mkdtempSync(path.join(realpathSync(os.tmpdir()),'billcheck-sqlite-test-'));roots.push(root);const repo=new SqliteBillCheckRepository(path.join(root,'data'));repos.push(repo);return {root,repo};}
 afterEach(()=>{for(const repo of repos.splice(0))repo.close();for(const root of roots.splice(0))rmSync(root,{recursive:true,force:true})});
 describe('SQLite local repository',()=>{
  it('persists bills and enforces CAS across independent database connections',async()=>{

@@ -1,10 +1,11 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, realpathSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-const root=mkdtempSync(path.join(os.tmpdir(),'billcheck-lifecycle-'));
+const tempRoot=realpathSync(os.tmpdir());
+const root=mkdtempSync(path.join(tempRoot,'billcheck-lifecycle-'));
 const data=path.join(root,'data'),source=path.resolve('dist/billcheck.mjs');
 const command=(entry,...args)=>execFileSync(process.execPath,[entry,...args,'--data-dir',data],{encoding:'utf8',windowsHide:true,timeout:30000});
 const clients=[];
@@ -36,6 +37,6 @@ try{
  try{command(source,'stop')}catch{}
  await new Promise(resolve=>setTimeout(resolve,200));
  const cleanupTarget=path.resolve(root);
- if(path.dirname(cleanupTarget)!==path.resolve(os.tmpdir())||!path.basename(cleanupTarget).startsWith('billcheck-lifecycle-'))throw Error('Refusing unsafe test cleanup path');
+ if(path.dirname(cleanupTarget)!==tempRoot||!path.basename(cleanupTarget).startsWith('billcheck-lifecycle-'))throw Error('Refusing unsafe test cleanup path');
  rmSync(cleanupTarget,{recursive:true,force:true});
 }

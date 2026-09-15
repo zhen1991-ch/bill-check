@@ -1,10 +1,11 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, realpathSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 if (!process.env.npm_execpath) throw new Error('Run npm run test:package.');
-const root = mkdtempSync(path.join(os.tmpdir(), 'billcheck-package-test-'));
+const tempRoot = realpathSync(os.tmpdir());
+const root = mkdtempSync(path.join(tempRoot, 'billcheck-package-test-'));
 const data = path.join(root, 'data');
 const archive = path.resolve('billcheck-local-0.1.0.tgz');
 const source = path.resolve('dist/billcheck.mjs');
@@ -23,6 +24,6 @@ try {
   try { run(source, 'stop', '--data-dir', data); } catch {}
   await new Promise(resolve => setTimeout(resolve, 250));
   const target = path.resolve(root);
-  if (path.dirname(target) !== path.resolve(os.tmpdir()) || !path.basename(target).startsWith('billcheck-package-test-')) throw new Error('Refusing unsafe test cleanup.');
+  if (path.dirname(target) !== tempRoot || !path.basename(target).startsWith('billcheck-package-test-')) throw new Error('Refusing unsafe test cleanup.');
   rmSync(target, { recursive: true, force: true });
 }

@@ -1,5 +1,5 @@
 import { afterEach, expect, it } from 'vitest';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, realpathSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { get } from 'node:http';
@@ -11,7 +11,7 @@ import { runDaemon, remoteRepository, remoteDelivery, rpc } from './runtime.js';
 const roots:string[]=[],daemons:Array<Awaited<ReturnType<typeof runDaemon>>>=[];
 afterEach(async()=>{for(const daemon of daemons.splice(0))await daemon.close();for(const root of roots.splice(0))rmSync(root,{recursive:true,force:true})});
 it('serves 16 MCP tools through the shared daemon and rejects forged browser requests',async()=>{
- const root=mkdtempSync(path.join(os.tmpdir(),'billcheck-runtime-test-'));roots.push(root);
+ const root=mkdtempSync(path.join(realpathSync(os.tmpdir()),'billcheck-runtime-test-'));roots.push(root);
  const daemon=await runDaemon(root);daemons.push(daemon);
  const server=createBillCheckMcpServer(remoteRepository(root),{fileDelivery:remoteDelivery(root)});
  const client=new Client({name:'local-test',version:'1'});const [c,s]=InMemoryTransport.createLinkedPair();
