@@ -1,0 +1,55 @@
+{
+  "name": "billcheck-local",
+  "version": "0.1.0",
+  "description": "Local receipt workspace with SQLite and MCP",
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhen1991-ch/bill-check.git"
+  },
+  "homepage": "https://github.com/zhen1991-ch/bill-check#readme",
+  "bugs": {
+    "url": "https://github.com/zhen1991-ch/bill-check/issues"
+  },
+  "engines": {
+    "node": ">=22.16"
+  },
+  "bin": {
+    "billcheck-local": "dist/billcheck.mjs"
+  },
+  "exports": {
+    "./domain": "./dist/core/domain.js",
+    "./repository": "./dist/core/repository.js",
+    "./server": "./dist/core/server.js",
+    "./delivery": "./dist/core/delivery.js",
+    "./bill-image": "./dist/core/bill-image.js",
+    "./widgets": "./dist/core/widgets.js",
+    "./zip-stream": "./dist/core/zip-stream.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/build.mjs",
+    "test": "vitest run",
+    "test:boundary": "node scripts/public-boundary.mjs",
+    "start": "node dist/billcheck.mjs start",
+    "release:metadata": "node scripts/release-metadata.mjs",
+    "test:package": "node scripts/package-smoke.mjs",
+    "prepack": "npm run build && npm run release:metadata"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.5",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.11"
+  }
+}

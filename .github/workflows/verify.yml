@@ -1,0 +1,38 @@
+name: Verify community runtime
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: community-verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  local:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [22, 24]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - run: npm run test:boundary
+      - run: node scripts/lifecycle-smoke.mjs
+      - run: npm run release:metadata
+      - run: npm pack --ignore-scripts
+      - run: npm run test:package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: community-${{ matrix.os }}-node${{ matrix.node }}
+          path: |
+            billcheck-local-*.tgz
+            dist/checksums.json
+            dist/sbom.cdx.json
