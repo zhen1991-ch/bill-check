@@ -1,6 +1,6 @@
 {
   "name": "billcheck-local",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Local receipt workspace with SQLite and MCP",
   "type": "module",
   "license": "AGPL-3.0-only",
@@ -34,7 +34,7 @@
     "NOTICE"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && node scripts/build.mjs",
+    "build": "node scripts/build.mjs",
     "test": "vitest run",
     "test:boundary": "node scripts/public-boundary.mjs",
     "start": "node dist/billcheck.mjs start",
@@ -44,11 +44,24 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.5",
+    "jszip": "^3.10.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-markdown": "9",
+    "react-router-dom": "^7.9.6",
+    "recharts": "^3.4.1",
+    "remark-gfm": "4",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@fortawesome/fontawesome-free": "^6.7.2",
     "@types/node": "^22.15.3",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "autoprefixer": "^10.4.21",
     "esbuild": "^0.28.2",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "vitest": "^4.1.11"
   }

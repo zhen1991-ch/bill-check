@@ -4,6 +4,11 @@ A local receipt workspace for people and their agents. One SQLite database,
 original files on disk, a browser interface, and all 16 BillCheck MCP tools.
 No account, cloud database, model API key, or telemetry is required.
 
+The browser application uses the same React views, responsive layout, visual
+tokens, navigation, receipt forms, charts, lists, details, and management
+dialogs as the hosted BillCheck application. Local-only copy replaces account,
+member, billing, and remote-AI actions without introducing a second UI design.
+
 ## Run from source
 
 Requires Node.js **22.16 or later** (Node 24 recommended).
@@ -19,8 +24,6 @@ like access to your receipts. There is no user login. The server accepts only
 loopback requests with the expected Host and Origin, and authenticated local
 operations. Do not expose it through a reverse proxy or a public tunnel.
 
-The intended published command is `npx billcheck-local@latest install`. Until
-the npm release is visible, install from a verified release tarball instead.
 BillCheck Local is licensed under **GNU AGPL v3.0 only**; see [LICENSE](LICENSE).
 Modified versions offered to users over a network must provide those users the
 corresponding source as required by section 13 of the license.
@@ -29,10 +32,12 @@ For a privately supplied, verified release tarball, a one-command local install
 works without publishing it first:
 
 ```sh
-npm exec --package /absolute/path/billcheck-local-0.1.0.tgz -- billcheck-local install
+npm exec --package /absolute/path/billcheck-local-0.2.0.tgz -- billcheck-local install
 ```
 
-Node.js must already be installed. `npm pack` generates a CycloneDX production
+Node.js must already be installed. npm is used here only as the local Node.js
+dependency/build runner; this project is distributed through GitHub, not the
+npm registry. `npm pack` generates a CycloneDX production
 dependency SBOM and SHA-256 manifest inside the package; these are integrity and
 inventory metadata, not a cryptographic publisher signature.
 
@@ -95,7 +100,8 @@ first; previous release files remain available for rollback.
 
 - The UI shows up to 500 receipts; date-range summaries cover the entire history.
 - MCP attachment inputs retain the existing 900,000-character data URL limit.
-  The UI caps files at 650 KB. Archives contain at most 100 selected originals.
+  The browser accepts JPEG, PNG, and WebP source images up to 8 MB and compresses
+  them before storage. Archives contain at most 100 selected originals.
 - Currency totals stay separate and use decimal arithmetic. The repository
   stores canonical decimal text instead of binary floating-point amounts.
 - SQLite uses WAL, FULL synchronization, transactions, and version checks.

@@ -104,7 +104,7 @@ export async function runDaemon(directory:string,requestedPort=0) {
   const web=createServer(async(req,res)=>{
     if(req.headers.host!==new URL(origin).host){reply(res,403,{error:'Invalid host'});return;}
     res.setHeader('x-content-type-options','nosniff');res.setHeader('referrer-policy','no-referrer');res.setHeader('cache-control','no-store');
-    res.setHeader('content-security-policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'");
+    res.setHeader('content-security-policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'");
     if(req.method==='POST'&&req.url==='/rpc') {
       if(req.headers.origin!==origin){reply(res,403,{error:'Invalid origin'});return;}
       await handleRpc(req,res);return;

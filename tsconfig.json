@@ -5,5 +5,5 @@
     "rootDir": "src", "outDir": "dist", "declaration": true,
     "strict": true, "noUncheckedIndexedAccess": true, "skipLibCheck": true
   },
-  "include": ["src/**/*.ts"], "exclude": ["src/**/*.test.ts"]
+  "include": ["src/core/**/*.ts", "src/local/**/*.ts", "src/web-assets.d.ts"], "exclude": ["src/**/*.test.ts", "src/ui/**/*"]
 }

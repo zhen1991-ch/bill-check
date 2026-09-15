@@ -7,7 +7,8 @@ if (!process.env.npm_execpath) throw new Error('Run npm run test:package.');
 const tempRoot = realpathSync(os.tmpdir());
 const root = mkdtempSync(path.join(tempRoot, 'billcheck-package-test-'));
 const data = path.join(root, 'data');
-const archive = path.resolve('billcheck-local-0.1.0.tgz');
+const packageJson = JSON.parse(readFileSync(path.resolve('package.json'), 'utf8'));
+const archive = path.resolve(`billcheck-local-${packageJson.version}.tgz`);
 const source = path.resolve('dist/billcheck.mjs');
 const run = (entry, ...args) => execFileSync(process.execPath, [entry, ...args], { encoding: 'utf8', windowsHide: true, timeout: 180_000, stdio: ['ignore', 'pipe', 'pipe'] });
 try {
