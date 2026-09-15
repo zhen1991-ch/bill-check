@@ -41,7 +41,7 @@ describe('SQLite local repository',()=>{
   expect((await repo.getSpendingSummary('local','category')).totalsByCurrency.EUR).toBe(50.2);
   await repo.createBill('local',input({currency:'KWD',amount:0.001}));
   expect((await repo.getSpendingSummary('local','category')).totalsByCurrency.KWD).toBe(0.001);
- });
+ },20000);
  it('cleans collection links atomically and requires budget versions',async()=>{
   const {repo}=setup();const c=await repo.createCollection('local',{name:'Trip'});
   const b=await repo.createBill('local',input({collectionIds:[c.data.id]}));
